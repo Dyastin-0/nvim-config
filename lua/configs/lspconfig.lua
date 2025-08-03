@@ -1,13 +1,38 @@
--- load defaults i.e lua_lsp
 require("nvchad.configs.lspconfig").defaults()
 
 local lspconfig = require "lspconfig"
 
--- EXAMPLE
 local servers = { "html", "cssls", "gopls", "svelte", "ts_ls" }
 local nvlsp = require "nvchad.configs.lspconfig"
 
--- lsps with default config
+vim.diagnostic.config({
+  virtual_text = false,
+  float = {
+    wrap = true,
+    border = "rounded",
+    max_width = math.floor(vim.o.columns * 0.6),
+    focusable = false,
+    close_events = { "BufLeave", "CursorMoved", "InsertEnter" },
+  },
+  signs = true,
+  underline = true,
+  severity_sort = true,
+})
+
+vim.api.nvim_create_autocmd("CursorHold", {
+  callback = function()
+    local opts = {
+      focusable = false,
+      close_events = { "BufLeave", "CursorMoved", "InsertEnter", "FocusLost" },
+      border = "rounded",
+      source = "always",
+      prefix = " ",
+      scope = "cursor",
+    }
+    vim.diagnostic.open_float(nil, opts)
+  end
+})
+
 for _, lsp in ipairs(servers) do
   lspconfig[lsp].setup {
     on_attach = nvlsp.on_attach,
@@ -17,26 +42,20 @@ for _, lsp in ipairs(servers) do
 end
 
 lspconfig.gopls.setup {
-    on_attach = function(client, bufnr)
-      nvlsp.on_attach(client, bufnr)
-  
-      -- Enable real-time diagnostics
-      vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(
-        vim.lsp.diagnostic.on_publish_diagnostics,
-        { virtual_text = true, signs = true, update_in_insert = false }
-      )
-    end,
-    on_init = nvlsp.on_init,
-    capabilities = nvlsp.capabilities,
-    settings = {
-      gopls = {
-        analyses = {
-          unusedparams = true,
-          nilness = true,
-          shadow = true,
-          unusedwrite = true,
-        },
-        staticcheck = true, -- Enable more static analysis
+  on_attach = function(client, bufnr)
+    nvlsp.on_attach(client, bufnr)
+  end,
+  on_init = nvlsp.on_init,
+  capabilities = nvlsp.capabilities,
+  settings = {
+    gopls = {
+      analyses = {
+        unusedparams = true,
+        nilness = true,
+        shadow = true,
+        unusedwrite = true,
       },
+      staticcheck = true,
     },
-  }
+  },
+}
